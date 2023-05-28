@@ -11,6 +11,8 @@ from ninja.security import HttpBearer
 
 from datetime import datetime, timedelta
 
+from dummy_project.env import APP_TOKEN_EXPIRATION_MINUTES
+
 rsa_private_key_path = os.environ.get('RSA_PRIVATE_KEY') or 'rsa_private.pem'
 rsa_public_key_path = os.environ.get('RSA_PUBLIC_KEY') or 'rsa_public.pem'
 
@@ -40,9 +42,9 @@ class TokenIssuer(object):
     @staticmethod
     def issue_token(username: str, password: str) -> dict or None:
         user: User = User.objects.get_by_natural_key(username)
-        utc_now = datetime.utcnow() + timedelta(minutes=int(os.getenv('TOKEN_EXPIRATION_MINUTES', 60 * 24 * 365)))
+        utc_now = datetime.utcnow() + timedelta(minutes=int(APP_TOKEN_EXPIRATION_MINUTES))
         # is_api_user = user.groups.filter(name='API_USER').exists()
-        if user is not None and user.check_password(password):
+        if user is not None and user.is_active and user.check_password(password):
             token_clear = dumps({"username": username, "expiration": utc_now.isoformat()})
             token = b64encode(token_clear.encode('utf-8')).decode('utf-8')
             token = sign_token(token)
@@ -69,8 +71,8 @@ def verify_token(token: str) -> bool:
     hash = SHA512.new(message.encode('utf-8'))
     hash.digest()
     verifier = PKCS1_v1_5.new(public_key)
-    print(signature)
     return verifier.verify(hash, bytes.fromhex(signature))
+
 
 def is_token_expired(token: str) -> bool:
     message, signature = token.split('.')

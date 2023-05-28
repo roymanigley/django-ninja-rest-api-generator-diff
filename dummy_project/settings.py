@@ -17,6 +17,8 @@ import dj_database_url
 from Crypto.PublicKey import RSA
 from time import sleep
 
+from dummy_project.env import APP_SECRET_KEY, APP_ENV, APP_DEBUG, APP_DATABASE_URL
+
 rsa_private_key_path = os.environ.get('RSA_PRIVATE_KEY') or 'rsa_private.pem'
 rsa_public_key_path = os.environ.get('RSA_PUBLIC_KEY') or 'rsa_public.pem'
 
@@ -38,13 +40,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("APP_SECRET", "local-secret-JLKDSAJIOWE67DSA9878965DSADAD1234098DSASA")
+SECRET_KEY = APP_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-PROD = os.getenv("APP_ENV", "LOCAL").upper() == "PROD"
-DEBUG= not PROD or os.getenv("APP_DEBUG", "FALSE").upper() == "TRUE"
+PROD = APP_ENV
+TEST = APP_ENV
+DEBUG = APP_DEBUG
 
-if not PROD:
+if not PROD and not TEST:
     with os.popen('docker ps | grep docker_dummy_db') as p:
         if p.read() == '':
             print("[+] Starting docker env")
@@ -103,7 +106,7 @@ WSGI_APPLICATION = 'dummy_project.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 
-db_config = dj_database_url.config(default=os.getenv('DATABASE_URL'))
+db_config = dj_database_url.config(default=APP_DATABASE_URL)
 db_config['ATOMIC_REQUESTS'] = True
 DATABASES = {
     'default': db_config,
