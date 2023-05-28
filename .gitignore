@@ -1,0 +1,7 @@
+.env
+.idea
+__pycache__
+migrations
+rsa_private.pem
+rsa_public.pem
+static
